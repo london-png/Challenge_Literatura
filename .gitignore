@@ -1,0 +1,34 @@
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build
+/target/
+/build/
+
+# Logs
+*.log
+
+# Configs locales
+application.properties
+application.yml
+!application.yml
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# Temporales
+*.tmp
+*.swp
+*.swo
+
+# Entornos virtuales
+venv/
+ENV/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
