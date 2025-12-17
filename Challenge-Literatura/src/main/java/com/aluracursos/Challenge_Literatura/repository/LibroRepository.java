@@ -1,3 +1,5 @@
+// com.aluracursos.Challenge_Literatura.repository.LibroRepository.java
+
 package com.aluracursos.Challenge_Literatura.repository;
 
 import com.aluracursos.Challenge_Literatura.model.Libro;
@@ -10,16 +12,16 @@ import java.util.Optional;
 public interface LibroRepository extends JpaRepository<Libro, Long> {
 
     Optional<Libro> findById(Long id);
-
     Optional<Libro> findByTitulo(String titulo);
 
-    // 👇 Nuevo método: Cargar todos los libros con sus autores pre-cargados
     @Query("SELECT l FROM Libro l LEFT JOIN FETCH l.autorIds")
     List<Libro> findAllWithAutores();
 
-   /* // 👇 Método opcional: Buscar por título con autores pre-cargados
-    @Query("SELECT l FROM Libro l LEFT JOIN FETCH l.autorIds WHERE l.titulo = :titulo")
-    List<Libro> findByTituloWithAutores(@Param("titulo") String titulo);*/
+    // ✅ Nuevo: Obtener todos los idiomas únicos (JPQL funciona aquí)
+    @Query("SELECT DISTINCT l.idioma FROM Libro l")
+    List<String[]> findAllLanguages();
 
-
+    // ✅ Nuevo: Obtener libros por idioma (Native Query para PostgreSQL)
+    @Query(value = "SELECT DISTINCT * FROM libros l WHERE ?1 = ANY(l.idioma)", nativeQuery = true)
+    List<Libro> findByLanguage(@Param("idioma") String idioma);
 }

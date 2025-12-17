@@ -2,10 +2,6 @@ package com.aluracursos.Challenge_Literatura.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Table;
 
 /*@Entity
 @Table(name = "Libros")*/

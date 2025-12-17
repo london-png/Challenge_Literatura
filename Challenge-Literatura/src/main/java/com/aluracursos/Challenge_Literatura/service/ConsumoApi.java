@@ -1,8 +1,8 @@
+// com.aluracursos.Challenge_Literatura.service.ConsumoApi.java
+
 package com.aluracursos.Challenge_Literatura.service;
 
-import com.aluracursos.Challenge_Literatura.model.RespuestaApi;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
@@ -10,30 +10,38 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-@Service
+@Component
 public class ConsumoApi {
-    private final ObjectMapper objectMapper = new ObjectMapper(); //declaración de un campo de instancia constante
 
-    public RespuestaApi obtenerDatos(String url){
+    public String obtenerDatos(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            throw new IllegalArgumentException("La URL no puede ser nula o vacía");
+        }
+
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .build();
-        HttpResponse<String> response = null;
+
+        HttpResponse<String> response;
         try {
-            response = client
-                    .send(request, HttpResponse.BodyHandlers.ofString());
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new RuntimeException("Error de red al consumir la API: " + e.getMessage(), e);
+            throw new RuntimeException("Error de red al consumir la API (" + url + "): " + e.getMessage(), e);
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // Restaura el estado de interrupción
-            throw new RuntimeException("Error al deserializar la respuesta JSON: " + e.getMessage(), e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("La solicitud fue interrumpida (" + url + "): " + e.getMessage(), e);
         }
-        try {
-            return objectMapper.readValue(response.body(), RespuestaApi.class);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al deserializar la respuesta JSON: " + e.getMessage(), e);
+
+        String responseBody = response.body();
+
+        // Depuración: Muestra los primeros 500 caracteres del JSON recibido
+        if (responseBody != null) {
+            System.out.println("🔍 JSON recibido (primeros 500 caracteres):");
+            System.out.println(responseBody.substring(0, Math.min(500, responseBody.length())));
+            System.out.println("----- FIN DEL JSON -----");
         }
+
+        return responseBody;
     }
 }
-

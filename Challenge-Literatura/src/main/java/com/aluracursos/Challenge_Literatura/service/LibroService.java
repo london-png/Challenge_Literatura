@@ -1,3 +1,5 @@
+// com.aluracursos.Challenge_Literatura.service.LibroService.java
+
 package com.aluracursos.Challenge_Literatura.service;
 
 import com.aluracursos.Challenge_Literatura.model.*;
@@ -8,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.aluracursos.Challenge_Literatura.model.DatosAutor;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -21,62 +24,70 @@ public class LibroService {
     private final LibroRepository libroRepository;
     private final AutorRepository autorRepository;
     private final ObjectMapper objectMapper;
-
-    // 👇 Eliminado: Ya no necesitamos EntityManager
+    private final ConvierteDatos convierteDatos; // ← Nueva dependencia
 
     @Autowired
     public LibroService(
             ConsumoApi consumoApi,
             LibroRepository libroRepository,
             AutorRepository autorRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            ConvierteDatos convierteDatos) { // ← Inyectado
         this.consumoApi = consumoApi;
         this.libroRepository = libroRepository;
         this.autorRepository = autorRepository;
         this.objectMapper = objectMapper;
+        this.convierteDatos = convierteDatos; // ← Inicializado
     }
 
     @Transactional
     public void buscarYMostrarLibros(String titulo) {
         String tituloNormalizado = titulo.trim();
+        if (tituloNormalizado.isEmpty()) {
+            System.out.println("El título no puede estar vacío.");
+            return;
+        }
+
         String urlEncoded = URLEncoder.encode(tituloNormalizado, StandardCharsets.UTF_8);
-        // 👇 Corregido: Eliminado el espacio extra al final de la URL
-        String URL_BASE = "https://gutendex.com/books/?search=" + urlEncoded; // ✅ Sin espacio
+        String URL_BASE = "https://gutendex.com/books/?search=" + urlEncoded;
 
         try {
-            RespuestaApi respuesta = consumoApi.obtenerDatos(URL_BASE);
+            // ✅ Paso 1: Consumir → devuelve String
+            String json = consumoApi.obtenerDatos(URL_BASE);
+
+            // ✅ Paso 2: Deserializar → String → RespuestaApi
+            RespuestaApi respuesta = convierteDatos.obtenerDatos(json, RespuestaApi.class);
+
             if (respuesta.resultados() == null || respuesta.resultados().length == 0) {
-                System.out.println("No se encontraron libros con ese titulo");
+                System.out.println("No se encontraron libros con ese título.");
                 return;
             }
 
             Map<String, List<DatosLibros>> librosPorTitulo = new HashMap<>();
             for (DatosLibros libro : respuesta.resultados()) {
                 String t = libro.Titulo();
-                librosPorTitulo.computeIfAbsent(t, k -> new ArrayList<>()).add(libro);
+                if (t != null) {
+                    librosPorTitulo.computeIfAbsent(t, k -> new ArrayList<>()).add(libro);
+                }
             }
 
-            System.out.println("\n Resultados encontrados");
+            System.out.println("\n📚 Resultados encontrados:");
             for (Map.Entry<String, List<DatosLibros>> entrada : librosPorTitulo.entrySet()) {
                 String tituloReal = entrada.getKey();
                 List<DatosLibros> versiones = entrada.getValue();
 
-                System.out.println("\n Titulo: " + tituloReal);
-                System.out.println(" Versiones disponibles (" + versiones.size() + "):");
+                System.out.println("\n🔹 Título: " + tituloReal);
+                System.out.println("   Versiones disponibles (" + versiones.size() + "):");
 
                 for (int i = 0; i < versiones.size(); i++) {
                     DatosLibros datosLibros = versiones.get(i);
-
-                    // Convertir y guardar el libro
                     Libro libroEntidad = convertirYGuardarLibro(datosLibros);
-
-                    // 👇 Obtener autores reales usando los IDs almacenados
                     List<Autor> autoresReales = obtenerAutoresPorIds(libroEntidad.getAutorIds());
 
                     String autores = "Desconocido";
                     if (!autoresReales.isEmpty()) {
                         autores = autoresReales.stream()
-                                .map(autor -> String.format("%s (Nacimiento: %s | Muerte: %s)",
+                                .map(autor -> String.format("%s (Nac: %s | Mue: %s)",
                                         autor.getNombre(),
                                         autor.getNacimiento() != null ? autor.getNacimiento() : "Desconocido",
                                         autor.getMuerte() != null ? autor.getMuerte() : "Desconocido"))
@@ -93,49 +104,55 @@ public class LibroService {
                         resumen = FormateadorDeTexto.formatear(datosLibros.Resumen()[0], 80);
                     }
 
-                    System.out.printf("    %d. ID: %d\n", i + 1, datosLibros.Id());
-                    System.out.printf("       Autores: %s\n", autores);
-                    System.out.printf("       Idioma(s): %s\n", idiomas);
-                    System.out.printf("       Descargas: %d\n", descargas);
+                    System.out.printf("    %d. ID: %d%n", i + 1, datosLibros.Id());
+                    System.out.printf("       Autores: %s%n", autores);
+                    System.out.printf("       Idioma(s): %s%n", idiomas);
+                    System.out.printf("       Descargas: %d%n", descargas);
                     System.out.println("       Resumen:");
-                    System.out.println("      " + resumen);
-                    System.out.println("       ----------------------------------------");
+                    System.out.println("         " + resumen);
+                    System.out.println("       " + "-".repeat(50));
                 }
             }
-            System.out.println("\n Libros consultados y guardados en la base de datos");
+            System.out.println("\n✅ Libros consultados y guardados en la base de datos.");
+
         } catch (Exception e) {
-            System.err.println("Error en el proceso de busquedad: " + e.getMessage());
+            System.err.println("❌ Error en la búsqueda: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     @Transactional
     private Libro convertirYGuardarLibro(DatosLibros datos) throws Exception {
-        Optional<Libro> libroExistente = libroRepository.findById(datos.Id());
-        if (libroExistente.isPresent()) {
-            return libroExistente.get(); // ✅ Ahora no hay problema con relaciones
+        if (datos == null || datos.Id() == null) {
+            throw new IllegalArgumentException("Datos del libro inválidos");
         }
 
-        // 👇 Convertir autores y obtener sus IDs
+        Optional<Libro> libroExistente = libroRepository.findById(datos.Id());
+        if (libroExistente.isPresent()) {
+            return libroExistente.get();
+        }
+
         List<Long> autorIds = new ArrayList<>();
         if (datos.Autores() != null) {
             for (DatosAutor da : datos.Autores()) {
-                Autor autor = autorRepository.findByNombre(da.Nombre())
-                        .orElseGet(() -> {
-                            Autor nuevoAutor = new Autor(da.Nombre(), da.Nacimiento(), da.Muerte());
-                            return autorRepository.save(nuevoAutor);
-                        });
-                autorIds.add(autor.getId());
+                if (da.Nombre() != null) {
+                    Autor autor = autorRepository.findByNombre(da.Nombre())
+                            .orElseGet(() -> {
+                                Autor nuevoAutor = new Autor(da.Nombre(), da.Nacimiento(), da.Muerte());
+                                return autorRepository.save(nuevoAutor);
+                            });
+                    autorIds.add(autor.getId());
+                }
             }
         }
 
-        String formatosJson = objectMapper.writeValueAsString(datos.formatos()); // ✅ Corregido
+        String formatosJson = objectMapper.writeValueAsString(datos.formatos());
 
         Libro libro = new Libro();
         libro.setId(datos.Id());
         libro.setTitulo(datos.Titulo());
         libro.setIdioma(datos.Idioma());
-        libro.setAutorIds(autorIds); // 👈 Usamos IDs en lugar de objetos
+        libro.setAutorIds(autorIds);
         libro.setDescargas(datos.Descargas());
         libro.setResumen(datos.Resumen());
         libro.setFormatos(formatosJson);
@@ -143,19 +160,30 @@ public class LibroService {
         return libroRepository.save(libro);
     }
 
-    // metodo optener los IDs
     public List<Autor> obtenerAutoresPorIds(List<Long> autorIds) {
         if (autorIds == null || autorIds.isEmpty()) {
             return Collections.emptyList();
         }
         return autorRepository.findAllById(autorIds);
     }
-    //metodo para listar los libros registrados
+
     public List<Libro> listarTodosLosLibros() {
         return libroRepository.findAllWithAutores();
     }
-    //metodo para que realice el conteo de libros registrados en la base de datos
+
     public long contadorLibrosRegistrados() {
-        return libroRepository.count(); //Usa el metodo incorporado de jpaReository
+        return libroRepository.count();
+    }
+    public List<String> obtenerTodosLosIdiomas() {
+        List<String[]> idiomasArray = libroRepository.findAllLanguages();
+        return idiomasArray.stream()
+                .flatMap(array -> java.util.Arrays.stream(array))
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public List<Libro> obtenerLibrosPorIdioma(String idioma) {
+        return libroRepository.findByLanguage(idioma);
     }
 }
