@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
+
+//convertir el JSON en un objeto Java.
 public record Formatos(@JsonAlias("text/html") String html,
                        @JsonAlias("application/epub+zip") String epub,
                        @JsonAlias("application/x-mobipocket-ebook") String mobi,

@@ -46,6 +46,7 @@ public class Principal {
     }
 
     public void muestraElMenu() {
+        String input;
         int opcion = -1;
         while (opcion != 0) {
             var menu = """
@@ -60,17 +61,34 @@ public class Principal {
                     **********************************************************
                     """;
             System.out.println(menu);
-            opcion = teclado.nextInt();
-            teclado.nextLine(); // Consumir el salto de línea
+            System.out.print("Opción: ");
+            input = teclado.nextLine().trim();
+
+            try {
+                opcion = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Entrada inválida. Por favor, ingrese un número del menú.\n");
+                pausarYContinuar(); // ← Nueva función
+                continue; // Vuelve al inicio del bucle sin ejecutar el switch
+            }
+
+            //opcion = teclado.nextInt();
+            //teclado.nextLine(); // Consumir el salto de línea
 
             switch (opcion) {
                 case 1 -> {
                     System.out.println("Escriba el nombre del título que desea buscar:");
                     String titulo = teclado.nextLine().trim();
-                    if (!titulo.isEmpty()) {
-                        libroService.buscarYMostrarLibros(titulo);
+                    if (titulo.isEmpty()) {
+                        System.out.println("❌ No ingresó ningún título. Regresando al menú.");
+                        pausarYContinuar();
+
+                    //validacion para que en la opcion 1 no afecte el proceso cuando recibe caracteres especiales
+                    } else if (!titulo.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s\\-,:;.'\"?!]+")) {
+                        System.out.println("❌ El título solo puede contener letras, espacios, tildes y la letra ñ.");
+                        pausarYContinuar();
                     } else {
-                        System.out.println("No ingresó ningún título. Regresando al menú.");
+                        libroService.buscarYMostrarLibros(titulo);
                     }
                 }
 
@@ -82,9 +100,13 @@ public class Principal {
 
                 case 4 -> {
                     System.out.println("Ingrese el año inicial (use números negativos para años a.C., ej. -500):");
-                    int yearStart = teclado.nextInt();
+                    // Antes: int yearStart = teclado.nextInt();
+                    // Ahora: usamos método seguro que valida entrada
+                    int yearStart = leerEnteroValido(); // ✅ Llamada al nuevo método
+
                     System.out.println("Ingrese el año final:");
-                    int yearEnd = teclado.nextInt();
+                    // Antes: int yearEnd = teclado.nextInt();
+                    int yearEnd = leerEnteroValido(); // ✅ Llamada al nuevo método
 
                     if (yearStart > yearEnd) {
                         System.out.println("❌ Error: El año inicial no puede ser mayor que el año final.");
@@ -92,6 +114,7 @@ public class Principal {
                         List<Autor> autores = autorService.buscarAutoresVivosEnRango(yearStart, yearEnd);
                         listViewActors.mostrarAutoresVivosEnRango(autores, yearStart, yearEnd);
                     }
+                    pausarYContinuar();
                 }
 
                 case 5 -> {
@@ -103,22 +126,59 @@ public class Principal {
 
                     listViewBook.mostrarMenuIdiomas(idiomas);
                     System.out.print("Opción: ");
-                    opcion = teclado.nextInt();
+                    int opcionIdioma = leerEnteroValido();
 
-                    if (opcion > 0 && opcion <= idiomas.size()) {
-                        String idiomaSeleccionado = idiomas.get(opcion - 1);
+                    if (opcionIdioma == 0) {
+                        System.out.println("Volviendo al menú principal...");
+                    } else if (opcionIdioma > 0 && opcionIdioma <= idiomas.size()) {
+                        String idiomaSeleccionado = idiomas.get(opcionIdioma - 1);
                         List<Libro> libros = libroService.obtenerLibrosPorIdioma(idiomaSeleccionado);
                         listViewBook.mostrarLibrosPorIdioma(libros, idiomaSeleccionado);
-                    } else if (opcion != 0) {
-                        System.out.println("❌ Opción no válida.");
+                    } else {
+                        System.out.println("❌ Opción no válida. Por favor, elija una opción del menú.");
                     }
                 }
 
                 case 0 -> System.out.println("Saliendo de la aplicación. ¡Hasta pronto!");
 
-                default -> System.out.println("Opción no válida. Por favor, elija una opción del menú.");
+                default -> {
+                    System.out.println("Opción no válida. Por favor, elija una opción del menú.");
+                    pausarYContinuar();
+                }
             }
         }
-        // No cerramos el Scanner aquí para evitar IllegalStateException
+
+    }
+
+
+    // metodo para hacer una pausa y dar enter para continuar es en relacion con catch (NumberFormatException e)
+    private void pausarYContinuar() {
+        System.out.println("\nPresione ENTER para continuar...");
+        teclado.nextLine(); // Espera que el usuario presione Enter
+    }
+
+    //metodo para hacer la limpieza de la pantalla
+    private void limpiarPantalla() {
+        System.out.print("\033[H\033[2J"); // Secuencia ANSI (funciona en terminales modernas)
+        System.out.flush();
+        // Si no funciona, usamos líneas en blanco como respaldo:
+        for (int i = 0; i < 30; i++) {
+            System.out.println();
+        }
+    }
+    // validacion para el punto 4 del menu que cuando pregunte el año solo acepte numeros, ni letras ni caracteres especiales
+    private int leerEnteroValido() {
+        while (true) {
+            String input = teclado.nextLine().trim();
+            if (input.isEmpty()) {
+                System.out.print("❌ No ingresó ningún valor. Por favor, ingrese un número: ");
+                continue;
+            }
+            try {
+                return Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.print("❌ Entrada inválida. Por favor, ingrese solo números (pueden ser negativos): ");
+            }
+        }
     }
 }

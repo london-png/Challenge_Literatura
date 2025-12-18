@@ -11,9 +11,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.aluracursos.Challenge_Literatura.model.DatosAutor;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -156,6 +156,7 @@ public class LibroService {
         libro.setDescargas(datos.Descargas());
         libro.setResumen(datos.Resumen());
         libro.setFormatos(formatosJson);
+        libro.setFechaConsulta(LocalDateTime.now()); // ✅ ← ¡AQUÍ SE ASIGNA LA FECHA!
 
         return libroRepository.save(libro);
     }
@@ -184,6 +185,22 @@ public class LibroService {
     }
 
     public List<Libro> obtenerLibrosPorIdioma(String idioma) {
-        return libroRepository.findByLanguage(idioma);
-    }
+        List<Libro> libros = libroRepository.findByLanguage(idioma);
+
+        // Usamos un Set para rastrear títulos ya vistos (normalizados)
+        Set<String> titulosVistos = new HashSet<>();
+        return libros.stream()
+                .filter(libro -> {
+                    if (libro.getTitulo() == null) return true; // o false, según prefieras
+                    String tituloNormalizado = libro.getTitulo()
+                            .toLowerCase()
+                            .replaceAll("[\\-\\s]", "") // Elimina guiones y espacios
+                            .trim();
+                    return titulosVistos.add(tituloNormalizado); // true si es nuevo
+                })
+                .collect(Collectors.toList());
+         }
+
+
+
 }

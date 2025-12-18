@@ -3,9 +3,9 @@ package com.aluracursos.Challenge_Literatura.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-/*@Entity
-@Table(name = "Libros")*/
 @JsonIgnoreProperties(ignoreUnknown = true)
+
+//convertir el JSON en un objeto Java.
 public record DatosLibros(@JsonAlias("id") Long Id,
                           @JsonAlias("title") String Titulo,
                           @JsonAlias("languages") String[] Idioma,

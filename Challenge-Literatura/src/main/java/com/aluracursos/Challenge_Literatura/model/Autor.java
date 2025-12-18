@@ -2,21 +2,22 @@ package com.aluracursos.Challenge_Literatura.model;
 
 import jakarta.persistence.*;
 
-@Entity
-@Table(name = "autores")
+@Entity // Le dice a Spring (con JPA/Hibernate):
+@Table(name = "autores") //creamos la tabla de autores
 public class Autor {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id // es la clave primaria para cada autor
+    @GeneratedValue(strategy = GenerationType.IDENTITY) //le dice a PostgreSQL que cuando se guarda un autor el asigne el siguiente numero que corresponde
 
+    //cada uno se convierte en una columna en la tabla autores
+    private Long id;
     private String nombre;
     private Integer nacimiento;
     private Integer muerte;
 
-    // Constructor vacío requerido por JPA
+    // Constructor vacío requerido por JPA para que funcione correctamente es el que costruye los objetos desde la BD
     public Autor() {}
 
-    // Constructor con parámetros
+    // Constructor con parámetros (se usa para crear un objeto de una clase
     public Autor(String nombre, Integer nacimiento, Integer muerte) {
         this.nombre = nombre;
         this.nacimiento = nacimiento;
@@ -37,13 +38,9 @@ public class Autor {
     public void setMuerte(Integer muerte) { this.muerte = muerte; }
 
     @Override
+
+    //metodo especial que todad las clasas heredan de la clase objet. es convertir un objeto en una cadena de texto legible
     public String toString() {
-       /* return "Autor{" +
-                "id=" + id +
-                ", nombre='" + nombre + '\'' +
-                ", nacimiento=" + nacimiento +
-                ", muerte=" + muerte +
-                '}';*/
         return String.format("%s (Nacido: %s | Muerto: %s)",
                 nombre != null ? nombre : "Desconocido",
                 nacimiento != null ? nacimiento : "Desconocido",
