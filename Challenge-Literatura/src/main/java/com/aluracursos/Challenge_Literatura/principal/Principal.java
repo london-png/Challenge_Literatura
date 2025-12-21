@@ -8,14 +8,13 @@ import com.aluracursos.Challenge_Literatura.service.*;
 import com.aluracursos.Challenge_Literatura.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.Scanner;
-import java.util.Set;
 
-@Component
+@Component//Indica a Spring que esta clase debe ser gestionada como un bean (inicializada y gestionada por el contenedor).
 public class Principal {
 
+    // dependencias que necesita la clase Principal para que funcione:
     private final ConsumoApi consumoApi;
     private final LibroService libroService;
     private final AutorService autorService;
@@ -27,6 +26,7 @@ public class Principal {
     private final ListViewAutoresVivos listViewAutoresVivos;
     private final ListViewLibrosPorIdioma listViewLibrosPorIdioma; // ← Nueva vista
 
+    //Constructor Recibe por inyección los servicios necesarios (Spring los proporciona automáticamente gracias a @Autowired).
     @Autowired
     public Principal(
             ConsumoApi consumoApi,
@@ -45,6 +45,7 @@ public class Principal {
         this.listViewLibrosPorIdioma = new ListViewLibrosPorIdioma(libroPorIdiomaService); // ← Inicializado
     }
 
+    //Se usa para crear el menu
     public void muestraElMenu() {
         String input;
         int opcion = -1;
@@ -64,6 +65,7 @@ public class Principal {
             System.out.print("Opción: ");
             input = teclado.nextLine().trim();
 
+            //validacion del menu para que tome la opcion correcta
             try {
                 opcion = Integer.parseInt(input);
             } catch (NumberFormatException e) {
@@ -72,9 +74,7 @@ public class Principal {
                 continue; // Vuelve al inicio del bucle sin ejecutar el switch
             }
 
-            //opcion = teclado.nextInt();
-            //teclado.nextLine(); // Consumir el salto de línea
-
+            // se usa para que se ejecute la opcion que se toma del menu principal
             switch (opcion) {
                 case 1 -> {
                     System.out.println("Escriba el nombre del título que desea buscar:");
@@ -83,9 +83,9 @@ public class Principal {
                         System.out.println("❌ No ingresó ningún título. Regresando al menú.");
                         pausarYContinuar();
 
-                    //validacion para que en la opcion 1 no afecte el proceso cuando recibe caracteres especiales
-                    } else if (!titulo.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s\\-,:;.'\"?!]+")) {
-                        System.out.println("❌ El título solo puede contener letras, espacios, tildes y la letra ñ.");
+                    //validacion para que en la opcion  no afecte el proceso cuando recibe caracteres especiales
+                    }  else if (!titulo.matches("[a-zA-ZáéíóúÁÉÍÓÚñÑàèìòùÀÈÌÒÙâêîôûÂÊÎÔÛãõÃÕçÇäëïöüÄËÏÖÜýÿÝŸ\\s\\-,:;.'\"?!()\\[\\]{}«»“”‘’…—–]+")) {
+                    System.out.println("❌ El título contiene caracteres no permitidos. Por favor, use solo letras, espacios, tildes, signos de puntuación básicos y caracteres acentuados comunes.");
                         pausarYContinuar();
                     } else {
                         libroService.buscarYMostrarLibros(titulo);
@@ -96,17 +96,15 @@ public class Principal {
 
                 case 3 -> listViewActors.ListarAutoresRegistrados();
 
-                // com.aluracursos.Challenge_Literatura.principal.Principal.java
-
                 case 4 -> {
                     System.out.println("Ingrese el año inicial (use números negativos para años a.C., ej. -500):");
-                    // Antes: int yearStart = teclado.nextInt();
-                    // Ahora: usamos método seguro que valida entrada
-                    int yearStart = leerEnteroValido(); // ✅ Llamada al nuevo método
+
+                    // metodo para valida la entrada
+                    int yearStart = leerEnteroValido();
 
                     System.out.println("Ingrese el año final:");
                     // Antes: int yearEnd = teclado.nextInt();
-                    int yearEnd = leerEnteroValido(); // ✅ Llamada al nuevo método
+                    int yearEnd = leerEnteroValido();
 
                     if (yearStart > yearEnd) {
                         System.out.println("❌ Error: El año inicial no puede ser mayor que el año final.");

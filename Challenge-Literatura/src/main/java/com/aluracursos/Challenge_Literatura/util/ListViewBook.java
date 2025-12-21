@@ -3,10 +3,10 @@ package com.aluracursos.Challenge_Literatura.util;
 import com.aluracursos.Challenge_Literatura.model.Autor;
 import com.aluracursos.Challenge_Literatura.model.Libro;
 import com.aluracursos.Challenge_Literatura.service.LibroService;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
+//Define una clase llamada ListViewBook que necesita un LibroService para funcionar, y lo recibe a través de su constructor.
 public class ListViewBook {
     private final LibroService libroService;
 
@@ -14,33 +14,36 @@ public class ListViewBook {
         this.libroService = libroService;
     }
 
-    // 👇 MÉTODO MODIFICADO: Ahora agrupa por título y muestra "Versiones disponibles (X)"
+    // Agrupa los libros y trae todos los libros que tengo guardados en la BD
     public void listarLibrosRegistrados() {
         List<Libro> libros = libroService.listarTodosLosLibros();
-        long totaLibrosRegistados = libroService.contadorLibrosRegistrados();
+        long totaLibrosRegistados = libroService.contadorLibrosRegistrados(); //solicita el conteo de cuantos libros hay en total
 
+        // valida si no hay libros guardados
         if (libros.isEmpty()) {
             System.out.println("No hay libros registrados.");
             return;
         }
 
-        // ✅ CAMBIO PRINCIPAL: Agrupar libros por título
+        // Agrupa libros por título
         Map<String, List<Libro>> librosPorTitulo = libros.stream()
                 .collect(Collectors.groupingBy(Libro::getTitulo));
 
+        //imprime los libros registrados
         System.out.println("\n" + "=".repeat(80));
-        System.out.printf("          📚 LIBROS REGISTRADOS EN LA BASE DE DATOS(%d libros)%n", totaLibrosRegistados);
+        System.out.printf("           LIBROS REGISTRADOS EN LA BASE DE DATOS(%d libros)%n", totaLibrosRegistados);
         System.out.println("=".repeat(80));
 
+        //Recorre donde los libros están agrupados por título
         for (Map.Entry<String, List<Libro>> entrada : librosPorTitulo.entrySet()) {
             String titulo = entrada.getKey();
             List<Libro> versiones = entrada.getValue();
 
-            // ✅ Muestra el título una vez y la cantidad de versiones
-            System.out.printf("\n   📖 Título: %s%n", titulo);
+            //Muestra el título una vez y la cantidad de versiones
+            System.out.printf("\n    Título: %s%n", titulo);
             System.out.printf("      Versiones disponibles (%d):%n", versiones.size());
 
-            // ✅ Muestra cada versión con detalles
+            //Muestra cada versión con detalles
             for (int i = 0; i < versiones.size(); i++) {
                 Libro libro = versiones.get(i);
                 System.out.printf("        %d. ID: %-6d | Consultado: %s%n",
@@ -48,6 +51,7 @@ public class ListViewBook {
                         libro.getId(),
                         libro.getFechaConsultaFormateada());
 
+                //Convierte los IDs de autores en objetos Autor completos, usando el servicio.
                 List<Autor> autores = libroService.obtenerAutoresPorIds(libro.getAutorIds());
                 if (!autores.isEmpty()) {
                     String autoresStr = autores.stream()
@@ -59,7 +63,7 @@ public class ListViewBook {
                     System.out.printf("           Autores: %s%n", autoresStr);
                 }
 
-                // Mostrar idioma(s)
+                // Mostrar idioma
                 if (libro.getIdioma() != null && libro.getIdioma().length > 0) {
                     String idiomas = String.join(", ", libro.getIdioma());
                     System.out.printf("           Idioma(s): %s%n", idiomas);
@@ -77,7 +81,7 @@ public class ListViewBook {
         System.out.println("-".repeat(80));
     }
 
-    // 👇 Resto de métodos: sin cambios (pero incluidos para completar la clase)
+    //Muestra al usuario una lista de libros en un idioma específico pero primero verifica si hay libros o no.
     public void mostrarLibrosPorIdioma(List<Libro> libros, String idioma) {
         if (libros.isEmpty()) {
             System.out.println("\n❌ No se encontraron libros en el idioma: " + idioma);
@@ -88,6 +92,7 @@ public class ListViewBook {
         System.out.printf("   📚 LIBROS EN %s - %d libros%n", idioma.toUpperCase(), libros.size());
         System.out.println("=".repeat(80));
 
+        //ciclo que imprime titulo de los libros consultados
         for (Libro libro : libros) {
             System.out.printf("   • %s%n", libro.getTitulo());
             System.out.printf("     Consultado: %s%n", libro.getFechaConsultaFormateada());
@@ -104,6 +109,7 @@ public class ListViewBook {
         System.out.println("-".repeat(80));
     }
 
+    // Recibe una lista de códigos de idioma
     public void mostrarMenuIdiomas(List<String> idiomas) {
         System.out.println("\n*** ELIJA UN IDIOMA ***");
         for (int i = 0; i < idiomas.size(); i++) {
@@ -114,6 +120,7 @@ public class ListViewBook {
         System.out.println("0 → Volver al menú principal");
     }
 
+    //para mapear códigos a nombres. si el codigo es conocido devuelve nombre y si no muestra desconocido
     private String obtenerNombreIdioma(String codigo) {
         return switch (codigo) {
             case "en" -> "inglés";

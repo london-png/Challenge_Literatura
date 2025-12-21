@@ -4,13 +4,14 @@ package com.aluracursos.Challenge_Literatura.util;
 
 import com.aluracursos.Challenge_Literatura.model.DatosLibros;
 import com.aluracursos.Challenge_Literatura.service.LibroPorIdiomaService;
-
 import java.util.List;
 
+//Su único trabajo es mostrar al usuario, de forma ordenada y visual, una lista de libros en un idioma
 public class ListViewLibrosPorIdioma {
 
     private final LibroPorIdiomaService libroPorIdiomaService;
 
+    //. Constructor con inyección de dependencia Recibe el servicio LibroPorIdiomaService para poder traducir códigos de idioma
     public ListViewLibrosPorIdioma(LibroPorIdiomaService libroPorIdiomaService) {
         this.libroPorIdiomaService = libroPorIdiomaService;
     }
@@ -18,15 +19,17 @@ public class ListViewLibrosPorIdioma {
     public void mostrarLibrosPorIdioma(List<DatosLibros> libros, String codigoIdioma) {
         String nombreIdioma = libroPorIdiomaService.obtenerNombreIdioma(codigoIdioma);
 
+        //validacion para saber que no existen libros
         if (libros.isEmpty()) {
             System.out.println("\n❌ No se encontraron libros en " + nombreIdioma + " (" + codigoIdioma + ").");
             return;
         }
 
         System.out.println("\n" + "=".repeat(80));
-        System.out.printf("   📚 LIBROS EN %s (%s) - %d libros%n", nombreIdioma.toUpperCase(), codigoIdioma, libros.size());
+        System.out.printf("     LIBROS EN %s (%s) - %d libros%n", nombreIdioma.toUpperCase(), codigoIdioma, libros.size());
         System.out.println("=".repeat(80));
 
+        //bucle para validar si el libro tiene titulo o no
         for (DatosLibros libro : libros) {
             String titulo = libro.Titulo() != null ? libro.Titulo() : "Sin título";
             String autores = "Desconocido";
