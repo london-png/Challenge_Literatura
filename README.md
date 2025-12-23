@@ -55,7 +55,7 @@ Finaliza la ejecución del programa.
 Validación robusta: Si el usuario ingresa letras, símbolos o entradas no válidas en cualquier opción numérica, el sistema muestra un mensaje claro y vuelve a solicitar la entrada.
 ****************************************************************************************************************************************************************************************************
 Acceso al Proyecto
-El código fuente está disponible en GitHub:
+El código fuente está disponible en GitHub:https://github.com/london-png/Challenge_Literatura.git
 
 Repositorio en GitHub (reemplazar con tu enlace real)
 
